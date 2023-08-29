@@ -156,23 +156,23 @@ function handlerTwo(c) {
 function getCookingMessage(quality) {
     if (quality < 0) {
         return "Inedible";
-    } else if (quality >= 0 && quality <= 2) {
+    } else if (quality <= 2) {
         return "Poor";
-    } else if (quality >= 3 && quality <= 5) {
+    } else if (quality <= 5) {
         return "Below Average";
-    } else if (quality >= 6 && quality <= 8) {
+    } else if (quality <= 8) {
         return "Average";
-    } else if (quality >= 9 && quality <= 11) {
+    } else if (quality <= 11) {
         return "Good";
-    } else if (quality >= 12 && quality <= 14) {
+    } else if (quality <= 14) {
         return "Very Good";
-    } else if (quality >= 15 && quality <= 17) {
+    } else if (quality <= 17) {
         return "Excellent";
-    } else if (quality >= 18 && quality <= 20) {
+    } else if (quality <= 20) {
         return "Gourmet";
-    } else if (quality >= 21 && quality <= 22) {
+    } else if (quality <= 22) {
         return "Artisan";
-    } else if (quality >= 23 && quality <= 25) {
+    } else if (quality <= 25) {
         return "Luxury";
     } else {
         return "Pinnacle";
