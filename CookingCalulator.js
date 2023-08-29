@@ -170,9 +170,9 @@ function getCookingMessage(quality) {
         return "Excellent";
     } else if (quality <= 20) {
         return "Gourmet";
-    } else if (quality <= 22) {
+    } else if (quality <= 23) {
         return "Artisan";
-    } else if (quality <= 25) {
+    } else if (quality <= 26) {
         return "Luxury";
     } else {
         return "Pinnacle";
