@@ -121,10 +121,10 @@ function handlerOne(c) {
 function handlerTwo(c) {
     var uiContext = c.getSubject().getUIContext();
     var data = uiContext.getData();
+    var ingredientsString = ingredientValues;
     
     var modifierInput = data.getString("modifierInput");
     var modifier = parseInt(modifierInput);
-    var ingredientsString = ingredientValues;
     
     if (uiContext.getLast() === "buttonRoll") {
         var result = roll(1, 20);
@@ -138,7 +138,7 @@ function handlerTwo(c) {
         
         var complexity = calculateComplexitySum(ingredientsString);
         var performance = skillCheck - complexity;
-        var quality = performance + skillCheck;
+        var quality = performance + skillCheck/2;
         
         c.getSubject().send("Skillcheck: " + skillCheck);
         c.getSubject().send("Complexity: " + complexity);
@@ -148,8 +148,10 @@ function handlerTwo(c) {
         var qualityMessage = getCookingMessage(quality);
         c.send(c.getSubject().getName() + " has made a " + qualityMessage + " dish");
         
+        for (var i = 0; i < techniques.length; i++) {
+        techniques[i].active = false;
+        }
         c.getSubject().closeUI();
-        ingredientValues = "";
     }
 }
 
