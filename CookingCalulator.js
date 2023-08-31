@@ -1,9 +1,8 @@
-var ingredientValues = "";
-
 function main(c) {
 
 }
 
+var ingredients = [];
 var techniques = [
     { name: "Roasting", complexity: 2, active: false },
     { name: "Grilling", complexity: 2, active: false },
@@ -53,15 +52,35 @@ function onPlayerMessage(c) {
 }
 
 function openUI(c) {
+    inventoryReader(c);
     var ui = pageOne(c);
-    c.getSubject().openUI(ui)
+    c.getSubject().openUI(ui);
+}
+
+function inventoryReader(c) {
+    var inventory = c.getSubject().getInventory();
+    
+    for (var i = 0; i < inventory.size(); i++) {
+        var item = inventory.getStack(i);
+        var loreList = item.getLoreList();
+        var itemName = item.getDisplayName();
+        
+        for (var j = 0; j < loreList.size(); j++) {
+            var loreLine = loreList.get(j);
+
+            if (loreLine.startsWith("Food Quality:")) {
+                var qualityNumber = parseFloat(loreLine.split(": ")[1]);
+
+                if (!isNaN(qualityNumber)) {
+                    ingredients.push({ name: itemName, quality: qualityNumber, active: false });
+                }
+            }
+        }
+    }
 }
 
 function pageOne(c) {
     var ui = mappet.createUI(c, "handlerOne").background();
-    
-    var ingredient = ui.textbox().id("ingredients").tooltip("Ingredient Values (seperate by comma)");
-    ingredient.rxy(0.5, 0.5).wh(160, 20).anchor(0.5);
 
     var complexityLabel = ui.label("Complexity Sum: 0").id("complexity-label");
     complexityLabel.rx(0.5).ry(0.5, 25).anchor(0.5).labelAnchor(0.5);
@@ -73,12 +92,24 @@ function pageOne(c) {
         var technique = techniques[i];
         technique = ui.toggle(technique.name, false).id(technique.name).tooltip("Complexity: " + technique.complexity);
         if (i < techniques.length/2) {
-            technique.rxy(0.1, (i + 3)* 0.035).wh(160,20).anchor(0.5);
-        }
+            technique.rxy(0.1, (i + 3) * 0.035).wh(160,20).anchor(0.5);
+        } 
         else {
-            technique.rxy(0.3, (3+ i - techniques.length/2) * 0.035).wh(160,20).anchor(0.5);
+            technique.rxy(0.3, (3 + i - techniques.length/2) * 0.035).wh(160,20).anchor(0.5);
         }
     }
+    
+    for (var i = 0; i <ingredients.length; i++) {
+        var ingredient = ingredients[i];
+        ingredient = ui.toggle(ingredient.name, false).id(ingredient.name).tooltip("Quality: " + ingredient.quality);
+        if (i < ingredients.length/2) {
+            ingredient.rxy(0.7, (i + 3) * 0.035).wh(160,20).anchor(0.5);
+        } 
+        else {
+            ingredient.rxy(0.9, (3 + i - ingredients.length/2) * 0.035).wh(160,20).anchor(0.5);
+        }
+    }
+    
     
     return ui;
 }
@@ -99,12 +130,15 @@ function handlerOne(c) {
     var uiContext = c.getSubject().getUIContext();
     var data = uiContext.getData();
     
-    if (uiContext.getLast() === "buttonConfirm") {
-        ingredientValues = data.getString("ingredients");
+    if (uiContext.isClosed()) {
+        ingredients = [];
+    }
     
+    if (uiContext.getLast() === "buttonConfirm") {
         var ui = pageTwo(c);
         c.getSubject().openUI(ui);
-    }
+        useItem(c);
+    }       
     
     for (var i = 0; i < techniques.length; i++) {
         var technique = techniques[i];
@@ -115,13 +149,20 @@ function handlerOne(c) {
         }
     }    
     
+    for (var i = 0; i < ingredients.length; i++) {
+        var ingredient = ingredients[i];
+        
+        if (uiContext.getLast() === ingredient.name) {
+            ingredient.active = uiContext.getData().getBoolean(ingredient.name);
+            break;
+        }
+    }    
     updateComplexityLabel(uiContext, c);
 }
 
 function handlerTwo(c) {
     var uiContext = c.getSubject().getUIContext();
     var data = uiContext.getData();
-    var ingredientsString = ingredientValues;
     
     var modifierInput = data.getString("modifierInput");
     var modifier = parseInt(modifierInput);
@@ -136,7 +177,7 @@ function handlerTwo(c) {
             skillCheck = result + modifier;
         }
         
-        var complexity = calculateComplexitySum(ingredientsString);
+        var complexity = calculateComplexitySum();
         var performance = skillCheck - complexity;
         var quality = performance + skillCheck/2;
         
@@ -151,33 +192,60 @@ function handlerTwo(c) {
         for (var i = 0; i < techniques.length; i++) {
         techniques[i].active = false;
         }
+        ingredients = [];
         c.getSubject().closeUI();
     }
 }
 
+function useItem(c) {
+    var inventory = c.getSubject().getInventory();
+
+    var activeIngredients = [];
+    for (var i = 0; i < ingredients.length; i++) {
+        if (ingredients[i].active) {
+            activeIngredients.push(ingredients[i]);
+        }
+    }
+
+    for (var i = 0; i < activeIngredients.length; i++) {
+        var activeIngredient = activeIngredients[i];
+        
+        for (var j = 0; j < inventory.size(); j++) {
+            var item = inventory.getStack(j);
+
+            if (item.getDisplayName() === activeIngredient.name) {
+                var newCount = item.getCount() - 1;
+                item.setCount(newCount);
+                break;
+            }
+        }
+    }
+}
+
+
 function getCookingMessage(quality) {
     if (quality < 0) {
-        return "Inedible";
+        return "inedible";
     } else if (quality <= 2) {
-        return "Poor";
+        return "poor";
     } else if (quality <= 5) {
-        return "Below Average";
+        return "below average";
     } else if (quality <= 8) {
-        return "Average";
+        return "average";
     } else if (quality <= 11) {
-        return "Good";
+        return "good";
     } else if (quality <= 14) {
-        return "Very Good";
+        return "very good";
     } else if (quality <= 17) {
-        return "Excellent";
+        return "excellent";
     } else if (quality <= 20) {
-        return "Gourmet";
+        return "gourmet";
     } else if (quality <= 23) {
-        return "Artisan";
+        return "artisan";
     } else if (quality <= 26) {
-        return "Luxury";
+        return "luxury";
     } else {
-        return "Pinnacle";
+        return "pinnacle";
     }
 }
 
@@ -186,7 +254,7 @@ function updateComplexityLabel(uiContext, c) {
     uiContext.get("complexity-label").label("Complexity Sum: " + sum);
 }
 
-function calculateComplexitySum(ingredientString) {
+function calculateComplexitySum() {
     var sum = 0;
 
     for (var i = 0; i < techniques.length; i++) {
@@ -197,12 +265,11 @@ function calculateComplexitySum(ingredientString) {
         }
     }
 
-    var ingredientValues = ingredientString.split(",");
-
-    for (var i = 0; i < ingredientValues.length; i++) {
-        var value = parseFloat(ingredientValues[i]);
-        if (!isNaN(value)) {
-            sum += value;
+    for (var i = 0; i < ingredients.length; i++) {
+        var ingredient = ingredients[i];
+        
+        if (ingredient.active) {
+            sum += ingredient.quality;
         }
     }
 
